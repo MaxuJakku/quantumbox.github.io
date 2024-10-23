@@ -456,5 +456,26 @@
 			document.getElementById("linkTo3_0").href += location.hash;
 		}
     </script>
+    <script>
+        // Initialize WAM
+        WAM.init({
+            plugins: [
+                {
+                    name: "YourPluginName",
+                    path: "path/to/your-plugin.wam",
+                    // Additional plugin settings
+                }
+            ]
+        });
+
+        // Create audio context
+        const audioContext = new AudioContext();
+
+        // Load and use the plugin
+        WAM.loadPlugin(audioContext, "YourPluginName").then(plugin => {
+            // Use the plugin
+            plugin.play();
+        });
+    </script>
 </body>
 </html>
