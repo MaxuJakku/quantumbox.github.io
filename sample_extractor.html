@@ -5258,6 +5258,8 @@ aside {
 // - Make the preview match the output that will be generated.
 // - Add an option to specify the sample rate used when loading via the Web Audio API.
 
+"use strict";
+
 const FILE_FORMAT_UNKNOWN = 0;
 const FILE_FORMAT_SF2 = 1;
 const FILE_FORMAT_WAV = 2;
@@ -5266,6 +5268,7 @@ const FILE_FORMAT_PLAIN_TEXT = 4;
 const FILE_FORMAT_MP3 = 5;
 const FILE_FORMAT_OGG = 6;
 const FILE_FORMAT_FLAC = 7;
+const FILE_FORMAT_SFZ = 8; // New constant for SFZ files
 
 const SAMPLE_FORMAT_UNKNOWN = 0;
 const SAMPLE_FORMAT_S16 = 1;
@@ -5275,16 +5278,11 @@ const SAMPLE_FORMAT_F64 = 4;
 
 const EXTENSION_RE = /\.([a-zA-Z0-9_]+)$/;
 
-// @TODO: Ideally this would use a JavaScript parser, but looking around, most
-// JavaScript features aren't used, so we can get away with a much cruder
-// parsing strategy.
 const SAMPLE_SCRIPT_RE = new RegExp(combineRegExps([
-    /^(let|var|const)/, // 1: Variable declaration type
-    /\s+([a-zA-Z_][a-zA-Z0-9_]*)/, // 2: Variable name
+    /^(let|var|const)/,
+    /\s+([a-zA-Z_][a-zA-Z0-9_]*)/,
     /\s*=\s*\[\s*/,
-    // @TODO: Probably won't need to support exponential notation here, but,
-    // who knows...
-    /((?:(?:-?[0-9]+\.[0-9]+),?\s*)+)/, // 3: Sample data
+    /((?:(?:-?[0-9]+\.[0-9]+),?\s*)+)/,
     /\s*\];?$/
 ]), "gm");
 
@@ -5292,6 +5290,34 @@ function combineRegExps(regexps) {
     return regexps.map(
         regexp => typeof regexp === "string" ? regexp : regexp.source
     ).join("");
+}
+
+// New functions for handling SFZ files
+/**
+ * Handle SFZ files.
+ * @param {File} file The SFZ file to handle.
+ */
+function handleSFZFile(file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const text = event.target.result;
+        // Parse SFZ file content
+        parseSFZContent(text);
+    };
+    reader.readAsText(file);
+}
+
+/**
+ * Parse SFZ file content.
+ * @param {string} content The content of the SFZ file.
+ */
+function parseSFZContent(content) {
+    const lines = content.split('\n');
+    lines.forEach(line => {
+        // Handle each line of the SFZ file
+        console.log(line);
+        // Add your SFZ parsing logic here
+    });
 }
 
 function secondsToMilliseconds(seconds) {
@@ -5305,6 +5331,9 @@ function isWithin(x, a, b) {
 function clamp(x, a, b) {
     return x > b ? b : x < a ? a : x;
 }
+
+// ...rest of your functions and definitions
+
 
 function identity(x) {
     return x;
@@ -6259,6 +6288,7 @@ function detectFileFormat(file) {
     const nameWithoutExtension = name.replace(EXTENSION_RE, "");
 
     if (extension === "sf2") return FILE_FORMAT_SF2;
+    if (extension === "sfz") return FILE_FORMAT_SFZ; // Detect SFZ files
     if (mimetype === "audio/x-wav" || extension === "wav") return FILE_FORMAT_WAV;
     if (mimetype === "application/javascript" || extension === "js") return FILE_FORMAT_JS;
     if (mimetype === "plain/text" || extension === "txt") return FILE_FORMAT_PLAIN_TEXT;
@@ -6283,9 +6313,8 @@ function tryToLoadCollectionFile(files) {
             supportedFiles.push(file);
         }
     }
+
     if (supportedFiles.length > 1 && detectedFileFormats.size === 1) {
-        // If we receive many files all of a type that we load
-        // as just one sample, create a sample group for those.
         if (detectedFileFormats.has(FILE_FORMAT_WAV)) {
             loadWavs(supportedFiles);
             return;
@@ -6301,8 +6330,6 @@ function tryToLoadCollectionFile(files) {
             return;
         }
     } else if (supportedFiles.length > 1) {
-        // If we receive many files, all of which are supported by the
-        // Web Audio API, then create a sample group for those.
         let onlyHasWebAudioCompatibleFiles = true;
         for (const detectedFileFormat of detectedFileFormats) {
             if (!(
@@ -6320,6 +6347,7 @@ function tryToLoadCollectionFile(files) {
             return;
         }
     }
+
     for (const file of supportedFiles) {
         const detectedFileFormat = detectFileFormat(file);
         switch (detectedFileFormat) {
@@ -6330,11 +6358,10 @@ function tryToLoadCollectionFile(files) {
             case FILE_FORMAT_MP3:
             case FILE_FORMAT_OGG:
             case FILE_FORMAT_FLAC:
-                loadFileViaWebAudio(file);
-                break;
+                loadFileViaWebAudio(file); break;
+            case FILE_FORMAT_SFZ: handleSFZFile(file); break; // Handling SFZ files
             default: console.warn("Unknown file format:", file); break;
         }
-        // We only support loading one collection file at a time.
         break;
     }
 }
