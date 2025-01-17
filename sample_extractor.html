@@ -5292,34 +5292,6 @@ function combineRegExps(regexps) {
     ).join("");
 }
 
-// New functions for handling SFZ files
-/**
- * Handle SFZ files.
- * @param {File} file The SFZ file to handle.
- */
-function handleSFZFile(file) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const text = event.target.result;
-        // Parse SFZ file content
-        parseSFZContent(text);
-    };
-    reader.readAsText(file);
-}
-
-/**
- * Parse SFZ file content.
- * @param {string} content The content of the SFZ file.
- */
-function parseSFZContent(content) {
-    const lines = content.split('\n');
-    lines.forEach(line => {
-        // Handle each line of the SFZ file
-        console.log(line);
-        // Add your SFZ parsing logic here
-    });
-}
-
 function secondsToMilliseconds(seconds) {
     return seconds * 1000;
 }
@@ -5331,9 +5303,6 @@ function isWithin(x, a, b) {
 function clamp(x, a, b) {
     return x > b ? b : x < a ? a : x;
 }
-
-// ...rest of your functions and definitions
-
 
 function identity(x) {
     return x;
@@ -5394,6 +5363,77 @@ function getSampleFormatName(format) {
         default: return "Unknown";
     }
 }
+
+// New functions for handling SFZ files
+/**
+ * Handle SFZ files.
+ * @param {File} file The SFZ file to handle.
+ */
+function handleSFZFile(file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const text = event.target.result;
+        // Parse SFZ file content
+        parseSFZContent(text);
+    };
+    reader.readAsText(file);
+}
+
+/**
+ * Parse SFZ file content.
+ * @param {string} content The content of the SFZ file.
+ */
+function parseSFZContent(content) {
+    const lines = content.split('\n');
+    const sampleGroup = new SampleGroup("SFZ Samples");
+    const samples = []; // Array to store parsed samples
+
+    lines.forEach(line => {
+        // Example parsing logic
+        if (line.startsWith('<sample>')) {
+            const name = extractSampleName(line);
+            const sampleRate = extractSampleRate(line);
+            const data = extractSampleData(line);
+            const loopStart = extractLoopStart(line);
+            const loopEnd = extractLoopEnd(line);
+            samples.push(new Sample(name, SAMPLE_FORMAT_S16, sampleRate, data, loopStart, loopEnd));
+        }
+    });
+
+    samples.forEach(sample => {
+        sampleGroup.addSample(sample);
+    });
+
+    loadedCollection.addSampleGroup(sampleGroup);
+    refreshSampleList(loadedCollection);
+}
+
+function extractSampleName(line) {
+    // Logic to extract sample name
+    return "SampleName";
+}
+
+function extractSampleRate(line) {
+    // Logic to extract sample rate
+    return 44100;
+}
+
+function extractSampleData(line) {
+    // Logic to extract sample data
+    return new Int16Array([0, 1, 2, 3, 4]);
+}
+
+function extractLoopStart(line) {
+    // Logic to extract loop start
+    return 0;
+}
+
+function extractLoopEnd(line) {
+    // Logic to extract loop end
+    return 5;
+}
+
+// ...rest of your functions and definitions
 
 class Sample {
     constructor(name, format, sampleRate, data, loopStart, loopEnd) {
